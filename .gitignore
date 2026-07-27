@@ -26,6 +26,7 @@ venv/
 # Artefatos gerados em execução local.
 reports/*.json
 reports/*.md
+reports/videos_anotados/
 
 # Dataset Kaggle baixado (pode ser grande, e continua sujeito à licença do
 # autor no Kaggle) — não versionamos os vídeos baixados, só o manifesto.

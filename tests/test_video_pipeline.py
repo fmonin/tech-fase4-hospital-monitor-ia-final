@@ -1,4 +1,4 @@
-from src.video.video_pipeline import _extrair_frames_anomalos
+from src.video.video_pipeline import _extrair_frames_anomalos, _extrair_marcacoes_anomalias
 
 
 def test_extrai_frames_de_eventos_com_janela():
@@ -18,3 +18,15 @@ def test_extrai_frames_de_eventos_com_frame_unico():
 
 def test_lista_vazia_devolve_conjunto_vazio():
     assert _extrair_frames_anomalos([]) == set()
+
+
+def test_marcacoes_associam_motivos_a_todos_os_frames_da_janela():
+    eventos = [{"janela": [3, 5], "motivos": ["assimetria de ombros elevada"]}]
+
+    marcacoes = _extrair_marcacoes_anomalias(eventos)
+
+    assert marcacoes == {
+        3: ["assimetria de ombros elevada"],
+        4: ["assimetria de ombros elevada"],
+        5: ["assimetria de ombros elevada"],
+    }

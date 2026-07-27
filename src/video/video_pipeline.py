@@ -51,15 +51,23 @@ def processar_video_clinico(caminho_video: str, caminho_video_anotado: str | Non
         "anomalias_movimento": anomalias_movimento,
         "possivel_desvio_no_procedimento": desvio_detectado,
         "video_anotado": None,
+        "aviso_video_anotado": None,
     }
 
     if caminho_video_anotado:
         try:
             from src.video.video_anotado import gerar_video_anotado
             frames_anomalos = _extrair_frames_anomalos(anomalias_movimento)
-            resultado["video_anotado"] = gerar_video_anotado(caminho_video, caminho_video_anotado, frames_anomalos)
+            marcacoes_anomalias = _extrair_marcacoes_anomalias(anomalias_movimento)
+            resultado["video_anotado"] = gerar_video_anotado(
+                caminho_video,
+                caminho_video_anotado,
+                frames_anomalos,
+                marcacoes_anomalias,
+            )
         except Exception as erro:
             logger.warning("Não foi possível gerar o vídeo anotado: %s", erro)
+            resultado["aviso_video_anotado"] = str(erro)
 
     return resultado
 
@@ -78,3 +86,22 @@ def _extrair_frames_anomalos(anomalias_movimento: list[dict]) -> set:
         elif "frame" in evento:
             frames.add(evento["frame"])
     return frames
+
+
+def _extrair_marcacoes_anomalias(anomalias_movimento: list[dict]) -> dict[int, list[str]]:
+    """Relaciona cada frame anômalo aos motivos clínicos da sua janela."""
+    marcacoes: dict[int, list[str]] = {}
+    for evento in anomalias_movimento:
+        motivos = evento.get("motivos") or ["movimento fora do padrão"]
+        if "janela" in evento:
+            inicio, fim = evento["janela"]
+            frames = range(inicio, fim + 1)
+        elif "frame" in evento:
+            frames = [evento["frame"]]
+        else:
+            continue
+
+        for frame in frames:
+            existentes = marcacoes.setdefault(frame, [])
+            existentes.extend(motivo for motivo in motivos if motivo not in existentes)
+    return marcacoes

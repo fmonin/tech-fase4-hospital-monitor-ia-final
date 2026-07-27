@@ -31,8 +31,10 @@ de decisão do `src/main.py`, só que exercitado interativamente. A aba
 tela, útil para gravar a demonstração pedida no desafio.
 """
 
+import re
 import sys
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -46,6 +48,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.anomalies.alert_manager import GerenciadorDeAlertas
 from src.anomalies.vitals_anomaly import DetectorAnomaliasVitais
+from src.config import PASTA_RELATORIOS
 from src.dados import carregador_vitaldb, dados_sinteticos
 from src.dados.carregador_csv import carregar_sinais_vitais_de_csv
 from src.fusion.multimodal_fusion import calcular_risco_paciente
@@ -57,6 +60,7 @@ st.set_page_config(page_title="Monitoramento Multimodal de Pacientes", page_icon
 
 CORES_SEVERIDADE = {"baixa": "#4C9F70", "media": "#E8A33D", "alta": "#D64545"}
 CORES_RISCO = {"baixo": "success", "medio": "warning", "alto": "error"}
+PASTA_VIDEOS_ANOTADOS = PASTA_RELATORIOS / "videos_anotados"
 
 
 # --------------------------------------------------------------------------
@@ -75,6 +79,19 @@ def _iniciar_estado():
 
 def _modelo_esta_treinado(nome: str) -> bool:
     return (PASTA_MODELOS / f"{nome}.joblib").exists()
+
+
+def _nome_seguro_para_arquivo(texto: str) -> str:
+    nome = re.sub(r"[^A-Za-z0-9_-]+", "-", texto.strip()).strip("-_")
+    return nome or "atendimento"
+
+
+def _caminho_video_anotado(nome_arquivo: str) -> Path:
+    PASTA_VIDEOS_ANOTADOS.mkdir(parents=True, exist_ok=True)
+    paciente_id = _nome_seguro_para_arquivo(st.session_state.paciente.get("id", "paciente-demo"))
+    video_id = _nome_seguro_para_arquivo(Path(nome_arquivo).stem)
+    momento = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return PASTA_VIDEOS_ANOTADOS / f"{paciente_id}_{momento}_{video_id}_anotado.mp4"
 
 
 def _barra_lateral():
@@ -234,7 +251,7 @@ def _aba_video():
             tmp.write(arquivo.read())
             caminho_temporario = tmp.name
 
-        caminho_saida = str(Path(tempfile.gettempdir()) / f"video_anotado_{Path(arquivo.name).stem}.mp4") if gerar_anotado else None
+        caminho_saida = str(_caminho_video_anotado(arquivo.name)) if gerar_anotado else None
 
         try:
             with st.spinner("Extraindo postura, detectando objetos e classificando movimento... pode levar alguns minutos."):
@@ -262,6 +279,17 @@ def _aba_video():
         if resultado.get("video_anotado"):
             st.write("**Vídeo anotado (esqueleto, objetos detectados e alertas):**")
             st.video(resultado["video_anotado"])
+            caminho_anotado = Path(resultado["video_anotado"])
+            st.caption(f"Salvo em: `{caminho_anotado.relative_to(PASTA_RELATORIOS.parent)}`")
+            if caminho_anotado.exists():
+                st.download_button(
+                    "Baixar vídeo anotado",
+                    data=caminho_anotado.read_bytes(),
+                    file_name=caminho_anotado.name,
+                    mime="video/mp4",
+                )
+        elif resultado.get("aviso_video_anotado"):
+            st.warning(f"O vídeo anotado não foi gerado: {resultado['aviso_video_anotado']}")
 
         if resultado["objetos_detectados"]:
             st.write("**Objetos/pessoas detectados no vídeo:**")
@@ -274,6 +302,42 @@ def _aba_video():
             if "motivos" in eventos.columns:
                 eventos["motivos"] = eventos["motivos"].apply(lambda m: ", ".join(m) if m else "—")
             st.dataframe(eventos, use_container_width=True, hide_index=True)
+
+
+# --------------------------------------------------------------------------
+# Aba: Vídeos gerados
+# --------------------------------------------------------------------------
+
+def _aba_videos():
+    st.subheader("Vídeos anotados")
+    st.write("Reveja ou baixe os vídeos gerados após a análise de movimento.")
+
+    if not PASTA_VIDEOS_ANOTADOS.exists():
+        st.info("Nenhum vídeo anotado foi gerado ainda.")
+        return
+
+    videos = sorted(
+        PASTA_VIDEOS_ANOTADOS.glob("*.mp4"),
+        key=lambda caminho: caminho.stat().st_mtime,
+        reverse=True,
+    )
+    if not videos:
+        st.info("Nenhum vídeo anotado foi gerado ainda.")
+        return
+
+    video_escolhido = st.selectbox(
+        "Vídeo disponível",
+        videos,
+        format_func=lambda caminho: caminho.name,
+    )
+    st.caption(f"{len(videos)} vídeo(s) persistido(s) em `reports/videos_anotados/`.")
+    st.video(str(video_escolhido))
+    st.download_button(
+        "Baixar vídeo selecionado",
+        data=video_escolhido.read_bytes(),
+        file_name=video_escolhido.name,
+        mime="video/mp4",
+    )
 
 
 # --------------------------------------------------------------------------
@@ -617,8 +681,8 @@ def main():
     _barra_lateral()
     _cabecalho()
 
-    aba_geral, aba_vitais, aba_video, aba_audio, aba_treino = st.tabs(
-        ["📋 Visão Geral", "📈 Sinais Vitais", "🎥 Vídeo", "🎙️ Áudio", "🧠 Treinamento"]
+    aba_geral, aba_vitais, aba_video, aba_videos, aba_audio, aba_treino = st.tabs(
+        ["📋 Visão Geral", "📈 Sinais Vitais", "🎥 Vídeo", "🎞️ Vídeos", "🎙️ Áudio", "🧠 Treinamento"]
     )
     with aba_geral:
         _aba_visao_geral()
@@ -626,6 +690,8 @@ def main():
         _aba_sinais_vitais()
     with aba_video:
         _aba_video()
+    with aba_videos:
+        _aba_videos()
     with aba_audio:
         _aba_audio()
     with aba_treino:

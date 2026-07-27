@@ -7,6 +7,7 @@ python-dotenv>=1.0
 
 # --- Vídeo: postura (substitui OpenPose) e detecção de objetos ---
 opencv-python-headless>=4.9
+imageio-ffmpeg>=0.5       # conversão do vídeo anotado para H.264 reproduzível no navegador
 ## mediapipe can be heavy and some environments (Python 3.13) may not
 ## have a wheel for the exact pinned version. Make it optional so the
 ## demo and training that rely on synthetic data can run without it.
