@@ -69,6 +69,16 @@ Eu gostei dessa abordagem porque cada parte fica mais fácil de testar e de expl
 
 Esse desenho mostra o caminho principal do projeto. O ponto importante aqui é que vídeo, áudio e sinais vitais entram separados, cada um faz sua própria análise, e só no final tudo se junta para formar a decisão final. É justamente esse desenho que ajuda o sistema a não depender de uma única fonte de informação.
 
+## Relatório técnico
+
+O relatório técnico completo está em [docs/relatorio_tecnico.md](docs/relatorio_tecnico.md). Nele eu detalhei:
+
+- como funciona a fusão multimodal entre vídeo, áudio e sinais vitais
+- quais modelos e técnicas são aplicados em cada tipo de dado
+- quais métricas estão disponíveis nos modelos treinados
+- exemplos de anomalias detectadas em sinais vitais, movimento e áudio
+- como o vídeo anotado mostra o esqueleto, as caixas de detecção e os alertas de movimento
+
 ## Estrutura do projeto
 
 ```text
