@@ -370,3 +370,4 @@ roda em qualquer máquina, em segundos.
 ## Licença de uso do desafio
 
 Projeto acadêmico — Tech Challenge Fase 4, Pós-Tech.
+=======
