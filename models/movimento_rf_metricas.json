@@ -1,0 +1,35 @@
+{
+  "modelo": "movimento_rf",
+  "acuracia": 0.96,
+  "precisao": 0.951,
+  "recall": 0.97,
+  "f1_score": 0.9604,
+  "matriz_confusao": [
+    [
+      95,
+      5
+    ],
+    [
+      3,
+      97
+    ]
+  ],
+  "colunas_atributos": [
+    "assimetria_ombros_media",
+    "assimetria_ombros_desvio",
+    "assimetria_quadril_media",
+    "assimetria_quadril_desvio",
+    "inclinacao_tronco_graus_media",
+    "inclinacao_tronco_graus_desvio",
+    "angulo_joelho_esquerdo_graus_media",
+    "angulo_joelho_esquerdo_graus_desvio",
+    "angulo_joelho_direito_graus_media",
+    "angulo_joelho_direito_graus_desvio",
+    "angulo_cotovelo_esquerdo_graus_media",
+    "angulo_cotovelo_esquerdo_graus_desvio",
+    "angulo_cotovelo_direito_graus_media",
+    "angulo_cotovelo_direito_graus_desvio",
+    "velocidade_movimento_media",
+    "velocidade_movimento_desvio"
+  ]
+}

@@ -1,0 +1,37 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+
+.idea/
+.vscode/
+.streamlit/
+
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# Artefatos gerados em execução local.
+reports/*.json
+reports/*.md
+
+# Dataset Kaggle baixado (pode ser grande, e continua sujeito à licença do
+# autor no Kaggle) — não versionamos os vídeos baixados, só o manifesto.
+amostras/videos_kaggle_fisioterapia/raw/
+!amostras/videos_kaggle_fisioterapia/manifesto.json
+
+# Os vídeos/áudios sintéticos em amostras/videos_normais/ e
+# amostras/audio_por_classe/ SÃO versionados de propósito (são pequenos e
+# garantem que o projeto rode de ponta a ponta sem nenhum download).

@@ -1,0 +1,35 @@
+{
+  "modelo": "vitais_rf",
+  "acuracia": 0.945,
+  "precisao": 0.9495,
+  "recall": 0.94,
+  "f1_score": 0.9447,
+  "matriz_confusao": [
+    [
+      95,
+      5
+    ],
+    [
+      6,
+      94
+    ]
+  ],
+  "colunas_atributos": [
+    "frequencia_cardiaca_media",
+    "frequencia_cardiaca_desvio",
+    "frequencia_cardiaca_min",
+    "frequencia_cardiaca_max",
+    "spo2_media",
+    "spo2_desvio",
+    "spo2_min",
+    "spo2_max",
+    "pressao_sistolica_media",
+    "pressao_sistolica_desvio",
+    "pressao_sistolica_min",
+    "pressao_sistolica_max",
+    "pressao_diastolica_media",
+    "pressao_diastolica_desvio",
+    "pressao_diastolica_min",
+    "pressao_diastolica_max"
+  ]
+}

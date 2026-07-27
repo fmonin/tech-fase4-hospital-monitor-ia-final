@@ -1,0 +1,4 @@
+# Optional / heavy dependencies (install only if you need the features)
+mediapipe==0.10.9         # MediaPipe Pose (video keypoints)
+tensorflow>=2.16          # required for YAMNet (audio events) if you want it
+tensorflow-hub>=0.16

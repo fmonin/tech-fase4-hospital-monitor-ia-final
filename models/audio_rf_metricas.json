@@ -1,0 +1,22 @@
+{
+  "modelo": "audio_rf",
+  "acuracia": 0.91,
+  "precisao": 0.8932,
+  "recall": 0.9293,
+  "f1_score": 0.9109,
+  "matriz_confusao": [
+    [
+      90,
+      11
+    ],
+    [
+      7,
+      92
+    ]
+  ],
+  "colunas_atributos": [
+    "variabilidade_pitch_hz",
+    "proporcao_silencio",
+    "energia_media"
+  ]
+}
