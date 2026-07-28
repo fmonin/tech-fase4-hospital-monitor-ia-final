@@ -79,6 +79,10 @@ O relatório técnico completo está em [docs/relatorio_tecnico.md](docs/relator
 - exemplos de anomalias detectadas em sinais vitais, movimento e áudio
 - como o vídeo anotado mostra o esqueleto, as caixas de detecção e os alertas de movimento
 
+## Vídeo de apresentação
+
+Assista ao vídeo de apresentação do projeto: [YouTube](https://youtu.be/jAP4AR2HWc0).
+
 ## Estrutura do projeto
 
 ```text
