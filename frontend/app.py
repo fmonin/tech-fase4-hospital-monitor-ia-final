@@ -94,6 +94,17 @@ def _caminho_video_anotado(nome_arquivo: str) -> Path:
     return PASTA_VIDEOS_ANOTADOS / f"{paciente_id}_{momento}_{video_id}_anotado.mp4"
 
 
+def _rotulo_sentimento(sentimento: str | None) -> str:
+    rotulos = {
+        "positive": "positivo",
+        "negative": "negativo",
+        "neutral": "neutro",
+        "mixed": "misto",
+        "indefinido": "indefinido",
+    }
+    return rotulos.get((sentimento or "indefinido").lower(), sentimento or "indefinido")
+
+
 def _barra_lateral():
     with st.sidebar:
         st.header("Dados do atendimento")
@@ -351,6 +362,15 @@ def _aba_audio():
              "AudioSet) e, se o Azure estiver configurado, transcreve e analisa o texto.")
 
     arquivo = st.file_uploader("Arquivo de áudio", type=["wav", "mp3", "m4a", "ogg"])
+    idioma_audio = st.selectbox(
+        "Idioma falado no áudio",
+        ["pt-BR", "en-US"],
+        format_func=lambda idioma: "Português (Brasil)" if idioma == "pt-BR" else "Inglês (Estados Unidos)",
+    )
+    detectar_eventos_sonoros = st.checkbox(
+        "Identificar eventos sonoros com YAMNet (opcional, pode levar mais tempo)",
+        value=False,
+    )
     if arquivo:
         st.audio(arquivo.getvalue())
 
@@ -373,7 +393,12 @@ def _aba_audio():
         try:
             with st.spinner("Extraindo características acústicas e classificando..."):
                 from src.audio.audio_pipeline import processar_audio_consulta
-                resultado = processar_audio_consulta(caminho_temporario, status_callback=_atualizar_status_azure)
+                resultado = processar_audio_consulta(
+                    caminho_temporario,
+                    status_callback=_atualizar_status_azure,
+                    idioma=idioma_audio,
+                    detectar_eventos_sonoros=detectar_eventos_sonoros,
+                )
         except Exception as erro:
             st.error(f"Não foi possível processar o áudio: {erro}")
             return
@@ -410,18 +435,22 @@ def _aba_audio():
                 columns={"classe": "Classe", "pontuacao": "Confiança", "relevante_clinicamente": "Relevância clínica"})
             st.dataframe(df_eventos, use_container_width=True, hide_index=True)
 
-        if resultado.get("transcricao"):
-            st.write("**Transcrição (Azure Speech to Text):**")
-            st.write(resultado["transcricao"])
-            analise = resultado.get("analise_texto") or {}
+        transcricao = resultado.get("transcricao")
+        analise = resultado.get("analise_texto") or {}
+        st.subheader("Texto e sentimento identificados")
+        if transcricao:
+            st.write("**Texto extraído pelo Azure Speech to Text:**")
+            st.write(transcricao)
             if analise:
                 termos_criticos = analise.get("termos_criticos_encontrados") or []
                 frases_chave = analise.get("frases_chave") or []
                 confianca = analise.get("confianca_sentimento") or {}
-                st.write("**Análise feita pela API Azure Text Analytics (descrição escrita):**")
+                sentimento = _rotulo_sentimento(analise.get("sentimento"))
+                st.write("**Sentimento identificado pelo Azure Text Analytics:**")
+                st.metric("Sentimento geral", sentimento.capitalize())
                 st.write(
-                    "A API AZure 'Text Analytics' avaliou a transcrição e classificou o sentimento geral como "
-                    f"**{analise.get('sentimento', 'indefinido')}**. "
+                    "A API Azure Text Analytics avaliou o texto extraído e classificou o sentimento geral como "
+                    f"**{sentimento}**. "
                     f"Pontuações de confiança: positivo {confianca.get('positivo', 0):.2f}, "
                     f"neutro {confianca.get('neutro', 0):.2f} e negativo {confianca.get('negativo', 0):.2f}. "
                     f"Termos críticos identificados: {', '.join(termos_criticos) if termos_criticos else 'nenhum'}. "
@@ -441,7 +470,7 @@ def _aba_audio():
                             confianca_trecho = item.get("confianca") or {}
                             texto_trecho = (item.get("trecho") or "").strip()
                             destaque = (
-                                "Sentimento: negative | "
+                                "Sentimento: negativo | "
                                 "Confiança (pos/neut/neg): "
                                 f"{confianca_trecho.get('positivo', 0):.2f}/"
                                 f"{confianca_trecho.get('neutro', 0):.2f}/"
@@ -453,7 +482,8 @@ def _aba_audio():
 
                     with st.expander("Ver todos os trechos com sentimento identificado"):
                         for item in trechos_sentimento:
-                            sentimento_trecho = item.get("sentimento", "indefinido")
+                            sentimento_original = item.get("sentimento", "indefinido")
+                            sentimento_trecho = _rotulo_sentimento(sentimento_original)
                             confianca_trecho = item.get("confianca") or {}
                             texto_trecho = (item.get("trecho") or "").strip()
                             destaque = (
@@ -464,13 +494,24 @@ def _aba_audio():
                                 f"{confianca_trecho.get('negativo', 0):.2f}"
                             )
 
-                            if sentimento_trecho == "negative":
+                            if sentimento_original == "negative":
                                 st.error(f"{destaque}\n\n\"{texto_trecho}\"")
-                            elif sentimento_trecho == "positive":
+                            elif sentimento_original == "positive":
                                 st.success(f"{destaque}\n\n\"{texto_trecho}\"")
                             else:
                                 st.info(f"{destaque}\n\n\"{texto_trecho}\"")
-        elif resultado.get("avisos"):
+            else:
+                st.warning("O Azure transcreveu o áudio, mas não retornou uma análise de sentimento.")
+        else:
+            st.write("**Texto extraído pelo Azure Speech to Text:**")
+            st.info("Nenhuma fala foi reconhecida neste arquivo de áudio.")
+            st.write("**Sentimento identificado pelo Azure Text Analytics:**")
+            st.metric("Sentimento geral", "Não disponível")
+            st.warning(
+                "O sentimento depende do texto extraído. Envie um áudio com fala clara em português para "
+                "o Azure Speech to Text transcrever e o Azure Text Analytics classificar."
+            )
+        if resultado.get("avisos"):
             st.caption("ℹ️ " + " / ".join(resultado["avisos"]))
 
 

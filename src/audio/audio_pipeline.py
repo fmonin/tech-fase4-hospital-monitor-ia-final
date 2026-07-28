@@ -23,7 +23,12 @@ from src.audio.voice_features import extrair_indicadores_de_fala
 logger = logging.getLogger(__name__)
 
 
-def processar_audio_consulta(caminho_audio: str, status_callback: Callable[[str], None] | None = None) -> dict:
+def processar_audio_consulta(
+    caminho_audio: str,
+    status_callback: Callable[[str], None] | None = None,
+    idioma: str = "pt-BR",
+    detectar_eventos_sonoros: bool = False,
+) -> dict:
     """Executa o pipeline completo de áudio e devolve um dicionário-relatório."""
     logger.info("Processando áudio de consulta: %s", caminho_audio)
 
@@ -36,22 +41,23 @@ def processar_audio_consulta(caminho_audio: str, status_callback: Callable[[str]
     resultado["classificacao_modelo_treinado"] = classificar_risco_fala(resultado["indicadores_acusticos"])
 
     try:
-        from src.audio.audioset_eventos import classificar_eventos_sonoros
-        resultado["eventos_sonoros_audioset"] = classificar_eventos_sonoros(caminho_audio)
-    except Exception as erro:
-        logger.warning("Classificação de eventos sonoros (YAMNet/AudioSet) pulada: %s", erro)
-        resultado["eventos_sonoros_audioset"] = None
-        resultado["avisos"].append(f"YAMNet/AudioSet indisponível: {erro}")
-
-    try:
         if status_callback:
             status_callback("Extraindo texto com AZure 'Speech to Text'.")
-        transcricao = transcrever_audio(caminho_audio)
+        transcricao = transcrever_audio(caminho_audio, idioma=idioma)
         resultado["transcricao"] = transcricao
+
+        if not transcricao:
+            resultado["analise_texto"] = None
+            resultado["avisos"].append(
+                "Azure Speech to Text não reconheceu fala no áudio enviado; não há texto para analisar o sentimento."
+            )
+            if status_callback:
+                status_callback("Nenhum texto reconhecido pelo AZure 'Speech to Text'.")
+            return resultado
 
         if status_callback:
             status_callback("Analisando Texto com AZure 'Text Analytics'.")
-        resultado["analise_texto"] = analisar_texto(transcricao)
+        resultado["analise_texto"] = analisar_texto(transcricao, idioma=idioma.split("-", 1)[0])
 
         if status_callback:
             status_callback("Análise concluída com AZure 'Text Analytics'.")
@@ -62,5 +68,18 @@ def processar_audio_consulta(caminho_audio: str, status_callback: Callable[[str]
         resultado["transcricao"] = None
         resultado["analise_texto"] = None
         resultado["avisos"].append(str(erro))
+
+    if detectar_eventos_sonoros:
+        try:
+            if status_callback:
+                status_callback("Identificando eventos sonoros com YAMNet (AudioSet).")
+            from src.audio.audioset_eventos import classificar_eventos_sonoros
+            resultado["eventos_sonoros_audioset"] = classificar_eventos_sonoros(caminho_audio)
+        except Exception as erro:
+            logger.warning("Classificação de eventos sonoros (YAMNet/AudioSet) pulada: %s", erro)
+            resultado["eventos_sonoros_audioset"] = None
+            resultado["avisos"].append(f"YAMNet/AudioSet indisponível: {erro}")
+    else:
+        resultado["eventos_sonoros_audioset"] = None
 
     return resultado

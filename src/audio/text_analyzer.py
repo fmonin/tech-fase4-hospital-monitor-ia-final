@@ -18,7 +18,7 @@ TERMOS_CRITICOS = [
 ]
 
 
-def analisar_texto(transcricao: str) -> dict:
+def analisar_texto(transcricao: str, idioma: str = "pt") -> dict:
     """
     Devolve sentimento (positivo/neutro/negativo), frases-chave e termos
     críticos encontrados na transcrição de uma consulta.
@@ -43,8 +43,8 @@ def analisar_texto(transcricao: str) -> dict:
     )
 
     documentos = [transcricao]
-    resultado_sentimento = cliente.analyze_sentiment(documentos)[0]
-    resultado_frases = cliente.extract_key_phrases(documentos)[0]
+    resultado_sentimento = cliente.analyze_sentiment(documentos, language=idioma)[0]
+    resultado_frases = cliente.extract_key_phrases(documentos, language=idioma)[0]
 
     logger.info("Análise de texto concluída: sentimento=%s", resultado_sentimento.sentiment)
 
