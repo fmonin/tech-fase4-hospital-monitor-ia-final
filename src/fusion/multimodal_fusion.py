@@ -34,6 +34,13 @@ PESOS_RISCO = {
 # aparecem entre os sons mais prováveis do áudio — diferente de sons comuns
 # de uma consulta (fala, respiração, tosse leve), que não elevam o risco.
 EVENTOS_SONOROS_GRAVES = {"Vomiting", "Choking", "Screaming", "Groan", "Baby cry, infant cry"}
+ROTULOS_SENTIMENTO = {
+    "positive": "positivo",
+    "negative": "negativo",
+    "neutral": "neutro",
+    "mixed": "misto",
+    "indefinido": "indefinido",
+}
 
 
 def calcular_risco_paciente(
@@ -129,6 +136,11 @@ def calcular_risco_paciente(
                 gerenciador_alertas.registrar(paciente_id, "audio", mensagem, severidade="media")
 
         analise_texto = resultado_audio.get("analise_texto") or {}
+        sentimento = analise_texto.get("sentimento")
+        if sentimento:
+            rotulo_sentimento = ROTULOS_SENTIMENTO.get(sentimento.lower(), sentimento)
+            motivos.append(f"Sentimento geral identificado na transcrição: {rotulo_sentimento}")
+
         if analise_texto.get("termos_criticos_encontrados"):
             pontuacao += PESOS_RISCO["audio_termo_critico"] * len(analise_texto["termos_criticos_encontrados"])
             mensagem = f"Termo(s) crítico(s) mencionado(s) na consulta: {', '.join(analise_texto['termos_criticos_encontrados'])}"

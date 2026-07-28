@@ -73,3 +73,14 @@ def test_evento_sonoro_comum_do_audioset_nao_eleva_risco():
     resultado = calcular_risco_paciente("paciente-teste", gerenciador, resultado_audio=resultado_audio)
 
     assert resultado["pontuacao_risco"] == 0
+
+
+def test_sentimento_misto_do_audio_aparece_nos_motivos_sem_elevar_risco():
+    gerenciador = GerenciadorDeAlertas()
+    resultado_audio = {"analise_texto": {"sentimento": "mixed"}}
+
+    resultado = calcular_risco_paciente("paciente-teste", gerenciador, resultado_audio=resultado_audio)
+
+    assert resultado["pontuacao_risco"] == 0
+    assert "Sentimento geral identificado na transcrição: misto" in resultado["motivos"]
+    assert gerenciador.resumo_por_severidade() == {"baixa": 0, "media": 0, "alta": 0}

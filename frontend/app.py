@@ -501,6 +501,8 @@ def _aba_audio():
                             else:
                                 st.info(f"{destaque}\n\n\"{texto_trecho}\"")
             else:
+                st.write("**Sentimento identificado pelo Azure Text Analytics:**")
+                st.metric("Sentimento geral", "Não disponível")
                 st.warning("O Azure transcreveu o áudio, mas não retornou uma análise de sentimento.")
         else:
             st.write("**Texto extraído pelo Azure Speech to Text:**")
